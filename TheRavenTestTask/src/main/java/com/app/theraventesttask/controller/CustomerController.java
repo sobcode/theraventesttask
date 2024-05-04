@@ -14,7 +14,7 @@ import java.util.List;
 
 /**
  * Controller class handling customer-related operations.
- *
+ * <p>
  * This class defines RESTful endpoints for managing customer information.
  * It includes operations such as creating, reading, updating, and deleting customers.
  * Additionally, it provides an endpoint for customer authentication.
@@ -79,10 +79,17 @@ public class CustomerController {
      * @throws InvalidInputFormatException Thrown when the input data does not meet the required format.
      */
     @PutMapping("/{id}")
-    public ResponseEntity<CustomerResponseDTO> updateCustomer(@PathVariable @Min(0) long id,
-                                                              @RequestBody UpdateCustomerDTO customerDTO) throws InvalidInputFormatException {
-        CustomerResponseDTO responseDTO = customerService.updateCustomer(customerDTO, id);
-        return ResponseEntity.ok(responseDTO);
+    public ResponseEntity<CustomerResponseDTO> updateCustomer(@PathVariable @Min(1) long id,
+                                                              @RequestBody UpdateCustomerDTO customerDTO)
+            throws InvalidInputFormatException {
+        return ResponseEntity.ok(customerService.updateCustomer(customerDTO, id, false));
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<CustomerResponseDTO> patchUpdateCustomer(@PathVariable @Min(1) long id,
+                                                                   @RequestBody UpdateCustomerDTO customerDTO)
+            throws InvalidInputFormatException {
+        return ResponseEntity.ok(customerService.updateCustomer(customerDTO, id, true));
     }
 
     /**
@@ -91,7 +98,7 @@ public class CustomerController {
      * @param id ID of the customer to delete.
      */
     @DeleteMapping("/{id}")
-    public void deleteCustomer(@PathVariable @Min(0) long id) {
+    public void deleteCustomer(@PathVariable @Min(1) long id) {
         customerService.deleteCustomer(id);
     }
 
@@ -103,8 +110,7 @@ public class CustomerController {
      */
     @PostMapping("/authenticate")
     public ResponseEntity<AuthenticationResponseDTO> authenticate
-            (@RequestBody AuthenticateRequestDTO authenticateRequestDTO)
-    {
+    (@RequestBody AuthenticationRequestDTO authenticateRequestDTO) {
         return ResponseEntity.ok(authenticationService.authenticateCustomer(authenticateRequestDTO));
     }
 }

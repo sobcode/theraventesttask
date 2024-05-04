@@ -2,6 +2,7 @@ package com.app.theraventesttask.service.impl;
 
 import com.app.theraventesttask.exception.AuthenticationException;
 import com.app.theraventesttask.exception.InvalidInputFormatException;
+import com.app.theraventesttask.helper.UpdateHelper;
 import com.app.theraventesttask.model.Customer;
 import com.app.theraventesttask.model.dto.CustomerDTO;
 import com.app.theraventesttask.model.dto.CustomerResponseDTO;
@@ -17,7 +18,7 @@ import java.util.regex.Pattern;
 
 /**
  * Implementation of the CustomerService for managing customer-related operations.
- *
+ * <p>
  * This class provides functionality for adding, retrieving, updating, and deleting customers,
  * as well as checking the validity of customer data inputs.
  */
@@ -25,6 +26,7 @@ import java.util.regex.Pattern;
 public class CustomerServiceImpl implements CustomerService {
     private final CustomerRepository customerRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UpdateHelper updateHelper;
 
     /**
      * Constructor for CustomerServiceImpl.
@@ -33,9 +35,11 @@ public class CustomerServiceImpl implements CustomerService {
      * @param passwordEncoder    PasswordEncoder for encoding customer passwords.
      */
     @Autowired
-    public CustomerServiceImpl(CustomerRepository customerRepository, PasswordEncoder passwordEncoder) {
+    public CustomerServiceImpl(CustomerRepository customerRepository, PasswordEncoder passwordEncoder,
+                               UpdateHelper updateHelper) {
         this.customerRepository = customerRepository;
         this.passwordEncoder = passwordEncoder;
+        this.updateHelper = updateHelper;
     }
 
     /**
@@ -94,7 +98,7 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerResponseDTO getCustomerById(long id) {
         Customer customer = customerRepository.findCustomerById(id);
 
-        if(!customer.getIsActive()) throw new NullPointerException("Customer with such id was deleted.");
+        if (!customer.getIsActive()) throw new NullPointerException("Customer with such id was deleted.");
 
         return CustomerResponseDTO.fromCustomer(customer);
     }
@@ -109,16 +113,26 @@ public class CustomerServiceImpl implements CustomerService {
      * @throws NullPointerException        Thrown if the customer with the provided ID is not found or is inactive.
      */
     @Override
-    public CustomerResponseDTO updateCustomer(UpdateCustomerDTO customerDTO, long id) throws InvalidInputFormatException {
+    public CustomerResponseDTO updateCustomer(UpdateCustomerDTO customerDTO, long id, boolean partialUpdateAllowed)
+            throws InvalidInputFormatException {
         checkCustomerDTO(CustomerDTO.fromUpdateCustomerDTO(customerDTO));
         Customer customer = customerRepository.findCustomerById(id);
 
-        if(!customer.getIsActive()) throw new NullPointerException("Customer with such id was deleted.");
+        if (!customer.getIsActive()) {
+            throw new NullPointerException("Customer with such an id has been deleted.");
+        }
 
-        customer.setFullName(customerDTO.getFullName());
-        customer.setPhone(customerDTO.getPhone());
+        try {
+            if (!partialUpdateAllowed && !updateHelper.checkIfFieldsAreNonNull(customerDTO)) {
+                throw new IllegalArgumentException("You need to specify all the required fields to update with 'put'.");
+            }
+            updateHelper.customerPatcher(customer, customerDTO);
+            customer = customerRepository.save(customer);
+        } catch (IllegalAccessException | NoSuchFieldException e) {
+            throw new RuntimeException(e);
+        }
 
-        return CustomerResponseDTO.fromCustomer(customerRepository.save(customer));
+        return CustomerResponseDTO.fromCustomer(customer);
     }
 
     /**
@@ -146,10 +160,9 @@ public class CustomerServiceImpl implements CustomerService {
                 emailRegex = "^(?=.{2,100}$)[^@]*@[^@]*$",
                 phoneRegex = "^\\+\\d{5,13}$";
 
-        if(!Pattern.matches(fullNameRegex, customerDTO.getFullName()) ||
-           (customerDTO.getEmail() != null && !Pattern.matches(emailRegex, customerDTO.getEmail())) ||
-           (customerDTO.getPhone() != null && !Pattern.matches(phoneRegex, customerDTO.getPhone())))
-        {
+        if (customerDTO.getFullName() != null && !Pattern.matches(fullNameRegex, customerDTO.getFullName()) ||
+                (customerDTO.getEmail() != null && !Pattern.matches(emailRegex, customerDTO.getEmail())) ||
+                (customerDTO.getPhone() != null && !Pattern.matches(phoneRegex, customerDTO.getPhone()))) {
             throw new InvalidInputFormatException("Invalid format of input data.");
         }
     }

@@ -4,7 +4,7 @@ import com.app.theraventesttask.config.jwt.JwtTokenProvider;
 import com.app.theraventesttask.controller.CustomerController;
 import com.app.theraventesttask.exception.InvalidInputFormatException;
 import com.app.theraventesttask.model.Customer;
-import com.app.theraventesttask.model.dto.AuthenticateRequestDTO;
+import com.app.theraventesttask.model.dto.AuthenticationRequestDTO;
 import com.app.theraventesttask.model.dto.AuthenticationResponseDTO;
 import com.app.theraventesttask.model.dto.CustomerDTO;
 import com.app.theraventesttask.repository.CustomerRepository;
@@ -49,7 +49,7 @@ public class CustomerControllerIT {
     public void whenAuthenticate_thenReceiveProperJWT() throws InvalidInputFormatException {
         customerService.addCustomer(new CustomerDTO(fullName, email, phone, password));
         ResponseEntity<AuthenticationResponseDTO> responseEntity =
-                customerController.authenticate(new AuthenticateRequestDTO(email, password));
+                customerController.authenticate(new AuthenticationRequestDTO(email, password));
         String token = responseEntity.getBody().getToken();
 
         Assertions.assertTrue(jwtTokenProvider.validateToken(token));

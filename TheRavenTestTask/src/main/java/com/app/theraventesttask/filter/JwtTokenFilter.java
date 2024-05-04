@@ -15,7 +15,7 @@ import java.io.IOException;
 
 /**
  * Filter class for handling JWT token authentication in the application.
- *
+ * <p>
  * This class intercepts incoming requests, extracts and validates JWT tokens,
  * and sets up the authentication context based on the token information.
  */

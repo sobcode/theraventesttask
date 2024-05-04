@@ -2,7 +2,7 @@ package com.app.theraventesttask.service.impl;
 
 import com.app.theraventesttask.config.jwt.JwtTokenProvider;
 import com.app.theraventesttask.model.Customer;
-import com.app.theraventesttask.model.dto.AuthenticateRequestDTO;
+import com.app.theraventesttask.model.dto.AuthenticationRequestDTO;
 import com.app.theraventesttask.model.dto.AuthenticationResponseDTO;
 import com.app.theraventesttask.repository.CustomerRepository;
 import com.app.theraventesttask.service.AuthenticationService;
@@ -48,7 +48,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
      * @throws NoSuchElementException Thrown if the customer with the provided email is not found.
      */
     @Override
-    public AuthenticationResponseDTO authenticateCustomer(AuthenticateRequestDTO authenticateRequestDTO) {
+    public AuthenticationResponseDTO authenticateCustomer(AuthenticationRequestDTO authenticateRequestDTO) {
         // Authenticate the customer using Spring Security's AuthenticationManager
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(authenticateRequestDTO.getEmail(),

@@ -61,6 +61,8 @@ public class SecurityConfig {
                                 .authenticated()
                                 .requestMatchers(HttpMethod.PUT, "/api/customers/**")
                                 .authenticated()
+                                .requestMatchers(HttpMethod.PATCH, "/api/customers/**")
+                                .authenticated()
                                 .requestMatchers(HttpMethod.DELETE, "/api/customers/**")
                                 .authenticated())
                 .sessionManagement(configurer ->

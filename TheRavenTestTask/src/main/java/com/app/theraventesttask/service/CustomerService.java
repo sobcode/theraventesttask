@@ -17,7 +17,8 @@ public interface CustomerService {
 
     CustomerResponseDTO getCustomerById(long id);
 
-    CustomerResponseDTO updateCustomer(UpdateCustomerDTO customerDTO, long id) throws InvalidInputFormatException;
+    CustomerResponseDTO updateCustomer(UpdateCustomerDTO customerDTO, long id, boolean partialUpdateAllowed)
+            throws InvalidInputFormatException;
 
     void deleteCustomer(long id);
 }
