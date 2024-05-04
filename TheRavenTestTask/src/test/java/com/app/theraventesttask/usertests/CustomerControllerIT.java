@@ -47,7 +47,7 @@ public class CustomerControllerIT {
 
     @Test
     public void whenAuthenticate_thenReceiveProperJWT() throws InvalidInputFormatException {
-        customerService.addCustomer(new CustomerDTO(fullName, email, phone, password));
+        customerService.createCustomer(new CustomerDTO(fullName, email, phone, password));
         ResponseEntity<AuthenticationResponseDTO> responseEntity =
                 customerController.authenticate(new AuthenticationRequestDTO(email, password));
         String token = responseEntity.getBody().getToken();

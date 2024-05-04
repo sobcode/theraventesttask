@@ -10,9 +10,11 @@ import com.app.theraventesttask.model.dto.UpdateCustomerDTO;
 import com.app.theraventesttask.repository.CustomerRepository;
 import com.app.theraventesttask.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -61,7 +63,7 @@ public class CustomerServiceImpl implements CustomerService {
      * @throws InvalidInputFormatException Thrown if the input data does not meet the required format.
      */
     @Override
-    public Customer addCustomer(CustomerDTO customerDTO) throws InvalidInputFormatException {
+    public CustomerResponseDTO createCustomer(CustomerDTO customerDTO) throws InvalidInputFormatException {
         checkCustomerDTO(customerDTO);
 
         if (customerRepository.findCustomerByEmail(customerDTO.getEmail()) != null) { // checks if there is a customer with such email
@@ -70,8 +72,9 @@ public class CustomerServiceImpl implements CustomerService {
         }
 
         customerDTO.setPassword(passwordEncoder.encode(customerDTO.getPassword())); // encodes password before customer creation
+        Customer createdCustomer = customerRepository.save(Customer.getCustomerFromCustomerDTO(customerDTO));
 
-        return customerRepository.save(Customer.getCustomerFromCustomerDTO(customerDTO));
+        return CustomerResponseDTO.fromCustomer(createdCustomer);
     }
 
     /**
@@ -80,8 +83,10 @@ public class CustomerServiceImpl implements CustomerService {
      * @return List of CustomerResponseDTO representing active customers.
      */
     @Override
-    public List<CustomerResponseDTO> getAllCustomers() {
-        return customerRepository.findAll().stream()
+    public List<CustomerResponseDTO> getAllCustomers(String fullName, String email, String phone, Pageable pageable) {
+        return customerRepository
+                .findAllByFullNameContainsAndEmailContainsAndPhoneContains(fullName, email, phone, pageable)
+                .stream()
                 .filter(Customer::getIsActive)
                 .map(CustomerResponseDTO::fromCustomer)
                 .toList();
@@ -117,6 +122,7 @@ public class CustomerServiceImpl implements CustomerService {
             throws InvalidInputFormatException {
         checkCustomerDTO(CustomerDTO.fromUpdateCustomerDTO(customerDTO));
         Customer customer = customerRepository.findCustomerById(id);
+        customer.setUpdated(new Date().getTime());
 
         if (!customer.getIsActive()) {
             throw new NullPointerException("Customer with such an id has been deleted.");

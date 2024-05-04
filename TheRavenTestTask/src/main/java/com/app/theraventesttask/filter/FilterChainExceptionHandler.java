@@ -38,7 +38,8 @@ public class FilterChainExceptionHandler extends OncePerRequestFilter {
      * @throws IOException      Thrown if an I/O exception occurs.
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         try {
             filterChain.doFilter(request,response);
         } catch (RuntimeException e) {

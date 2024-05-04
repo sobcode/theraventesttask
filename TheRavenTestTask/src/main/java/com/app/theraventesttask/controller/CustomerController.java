@@ -6,6 +6,7 @@ import com.app.theraventesttask.service.AuthenticationService;
 import com.app.theraventesttask.service.CustomerService;
 import jakarta.validation.constraints.Min;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +47,7 @@ public class CustomerController {
      */
     @PostMapping
     public ResponseEntity<CustomerResponseDTO> createCustomer(@RequestBody CustomerDTO customerDTO) throws InvalidInputFormatException {
-        return ResponseEntity.ok(CustomerResponseDTO.fromCustomer(customerService.addCustomer(customerDTO)));
+        return ResponseEntity.ok(customerService.createCustomer(customerDTO));
     }
 
     /**
@@ -55,8 +56,11 @@ public class CustomerController {
      * @return ResponseEntity containing a list of response DTOs for all customers.
      */
     @GetMapping
-    public ResponseEntity<List<CustomerResponseDTO>> readAllCustomers() {
-        return ResponseEntity.ok(customerService.getAllCustomers());
+    public ResponseEntity<List<CustomerResponseDTO>> readAllCustomers(@RequestParam(defaultValue = "") String fullName,
+                                                                      @RequestParam(defaultValue = "") String email,
+                                                                      @RequestParam(defaultValue = "") String phone,
+                                                                      Pageable pageable) {
+        return ResponseEntity.ok(customerService.getAllCustomers(fullName, email, phone, pageable));
     }
 
     /**
