@@ -24,8 +24,13 @@ public class LoggingAspect {
      */
     @Pointcut("execution(* com.app.theraventesttask..*.*(..)) " +
             "&& !execution(* com.app.theraventesttask..ControllerExceptionHandler.*(..)) " +
-            "&& !@annotation(org.springframework.web.bind.annotation.ExceptionHandler)")
+            "&& !@annotation(org.springframework.web.bind.annotation.ExceptionHandler)" +
+            "&& !within(com.app.theraventesttask.filter..*)")
     public void methodsToBeLogged() {}
+
+    @Pointcut("execution(* com.app.theraventesttask..*.*(..)) " +
+            "&& !within(com.app.theraventesttask.filter..*)")
+    public void afterThrowingToBeLogged() {}
 
     /**
      * Advice to log method entry and method exit.
@@ -54,7 +59,7 @@ public class LoggingAspect {
      * @param jp        JoinPoint representing the method being intercepted.
      * @param exception Exception thrown by the intercepted method.
      */
-    @AfterThrowing(pointcut = "execution(* com.app.theraventesttask..*.*(..))", throwing = "exception")
+    @AfterThrowing(pointcut = "afterThrowingToBeLogged()", throwing = "exception")
     public void logAfterThrowing(JoinPoint jp, Exception exception) {
         String className = jp.getTarget().getClass().getSimpleName();
         String methodName = jp.getSignature().getName();
