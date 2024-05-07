@@ -6,10 +6,12 @@ import com.app.theraventesttask.helper.UpdateHelper;
 import com.app.theraventesttask.model.Customer;
 import com.app.theraventesttask.model.dto.CustomerDTO;
 import com.app.theraventesttask.model.dto.CustomerResponseDTO;
+import com.app.theraventesttask.model.dto.PaginatedCustomersResponseDTO;
 import com.app.theraventesttask.model.dto.UpdateCustomerDTO;
 import com.app.theraventesttask.repository.CustomerRepository;
 import com.app.theraventesttask.service.CustomerService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -51,7 +53,7 @@ public class CustomerServiceImpl implements CustomerService {
      * @return Customer entity representing the found customer.
      */
     @Override
-    public Customer findCustomerByEmail(String email) {
+    public Customer getCustomerByEmail(String email) {
         return customerRepository.findCustomerByEmail(email);
     }
 
@@ -59,7 +61,7 @@ public class CustomerServiceImpl implements CustomerService {
      * Adds a new customer based on the provided CustomerDTO.
      *
      * @param customerDTO DTO containing customer information.
-     * @return Customer entity representing the added customer.
+     * @return CustomerResponseDTO representing the added customer.
      * @throws InvalidInputFormatException Thrown if the input data does not meet the required format.
      */
     @Override
@@ -78,18 +80,27 @@ public class CustomerServiceImpl implements CustomerService {
     }
 
     /**
-     * Retrieves a list of all active customers.
+     * Retrieves a paginated list of customers based on the specified search criteria.
      *
-     * @return List of CustomerResponseDTO representing active customers.
+     * @param fullName The full name of the customer to search for (partial match).
+     * @param email The email address of the customer to search for (partial match).
+     * @param phone The phone number of the customer to search for (partial match).
+     * @param pageable Pagination information for the result set.
+     * @return A PaginatedCustomersResponseDTO containing the list of customers matching the specified criteria
+     *         along with pagination details.
      */
     @Override
-    public List<CustomerResponseDTO> getAllCustomers(String fullName, String email, String phone, Pageable pageable) {
-        return customerRepository
-                .findAllByFullNameContainsAndEmailContainsAndPhoneContains(fullName, email, phone, pageable)
-                .stream()
-                .filter(Customer::getIsActive)
+    public PaginatedCustomersResponseDTO getCustomers(String fullName, String email, String phone, Pageable pageable) {
+        Page<Customer> customersPage = customerRepository
+                .findAllByFullNameContainsAndEmailContainsAndPhoneContainsAndIsActiveIsTrue(
+                        fullName, email, phone, pageable);
+
+        List<CustomerResponseDTO> customers = customersPage.stream()
                 .map(CustomerResponseDTO::fromCustomer)
                 .toList();
+
+        return new PaginatedCustomersResponseDTO(customers, customersPage.getTotalElements(),
+                customersPage.getTotalPages());
     }
 
     /**
@@ -103,26 +114,30 @@ public class CustomerServiceImpl implements CustomerService {
     public CustomerResponseDTO getCustomerById(long id) {
         Customer customer = customerRepository.findCustomerById(id);
 
-        if (!customer.getIsActive()) throw new NullPointerException("Customer with such id was deleted.");
+        if (!customer.getIsActive()) {
+            throw new NullPointerException("Customer with such id was deleted.");
+        }
 
         return CustomerResponseDTO.fromCustomer(customer);
     }
 
     /**
-     * Updates a customer's information based on the provided UpdateCustomerDTO.
+     * Updates the customer with the specified ID based on the provided UpdateCustomerDTO.
      *
-     * @param customerDTO UpdateCustomerDTO containing the updated customer information.
-     * @param id          ID of the customer to update.
-     * @return CustomerResponseDTO representing the updated customer.
-     * @throws InvalidInputFormatException Thrown if the input data does not meet the required format.
-     * @throws NullPointerException        Thrown if the customer with the provided ID is not found or is inactive.
+     * @param customerDTO The UpdateCustomerDTO containing the updated customer information.
+     * @param id The ID of the customer to be updated.
+     * @param partialUpdateAllowed A boolean flag indicating whether partial update is allowed.
+     * @return A CustomerResponseDTO representing the updated customer.
+     * @throws InvalidInputFormatException if the provided customerDTO is invalid.
+     * @throws NullPointerException if the customer with the specified ID is not found or has been deleted.
+     * @throws IllegalArgumentException if partialUpdateAllowed is false and not all required fields are specified.
+     * @throws RuntimeException if an unexpected error occurs during the update process.
      */
     @Override
     public CustomerResponseDTO updateCustomer(UpdateCustomerDTO customerDTO, long id, boolean partialUpdateAllowed)
             throws InvalidInputFormatException {
         checkCustomerDTO(CustomerDTO.fromUpdateCustomerDTO(customerDTO));
         Customer customer = customerRepository.findCustomerById(id);
-        customer.setUpdated(new Date().getTime());
 
         if (!customer.getIsActive()) {
             throw new NullPointerException("Customer with such an id has been deleted.");
@@ -133,6 +148,7 @@ public class CustomerServiceImpl implements CustomerService {
                 throw new IllegalArgumentException("You need to specify all the required fields to update with 'put'.");
             }
             updateHelper.customerPatcher(customer, customerDTO);
+            customer.setUpdated(new Date().getTime());
             customer = customerRepository.save(customer);
         } catch (IllegalAccessException | NoSuchFieldException e) {
             throw new RuntimeException(e);

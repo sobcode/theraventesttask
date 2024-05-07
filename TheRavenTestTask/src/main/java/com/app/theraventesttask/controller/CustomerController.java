@@ -10,8 +10,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-
 
 /**
  * Controller class handling customer-related operations.
@@ -46,25 +44,32 @@ public class CustomerController {
      * @throws InvalidInputFormatException Thrown when the input data does not meet the required format.
      */
     @PostMapping
-    public ResponseEntity<CustomerResponseDTO> createCustomer(@RequestBody CustomerDTO customerDTO) throws InvalidInputFormatException {
+    public ResponseEntity<CustomerResponseDTO> createCustomer(@RequestBody CustomerDTO customerDTO)
+            throws InvalidInputFormatException {
         return ResponseEntity.ok(customerService.createCustomer(customerDTO));
     }
 
     /**
-     * Endpoint for retrieving all customers.
+     * Retrieves a paginated list of customers based on the provided search criteria.
+     * Customers can be filtered by specifying parts of the fields fullName, email or phone.
      *
-     * @return ResponseEntity containing a list of response DTOs for all customers.
+     * @param fullName The full name of the customer to search for.
+     * @param email    The email address of the customer to search for.
+     * @param phone    The phone number of the customer to search for.
+     * @param pageable Pagination information for the result set.
+     * @return A ResponseEntity containing a PaginatedCustomersResponseDTO with the list of customers
+     *         matching the provided criteria and pagination details.
      */
     @GetMapping
-    public ResponseEntity<List<CustomerResponseDTO>> readAllCustomers(@RequestParam(defaultValue = "") String fullName,
-                                                                      @RequestParam(defaultValue = "") String email,
-                                                                      @RequestParam(defaultValue = "") String phone,
-                                                                      Pageable pageable) {
-        return ResponseEntity.ok(customerService.getAllCustomers(fullName, email, phone, pageable));
+    public ResponseEntity<PaginatedCustomersResponseDTO> readCustomers(@RequestParam(defaultValue = "") String fullName,
+                                                                       @RequestParam(defaultValue = "") String email,
+                                                                       @RequestParam(defaultValue = "") String phone,
+                                                                       Pageable pageable) {
+        return ResponseEntity.ok(customerService.getCustomers(fullName, email, phone, pageable));
     }
 
     /**
-     * Endpoint for retrieving a customer by their ID.
+     * Endpoint for retrieving a customer by ID.
      *
      * @param id ID of the customer to retrieve.
      * @return ResponseEntity containing the response DTO for the specified customer.
@@ -75,9 +80,9 @@ public class CustomerController {
     }
 
     /**
-     * Endpoint for updating an existing customer.
+     * Endpoint to update a customer's information (all the fields).
      *
-     * @param id          ID of the customer to update.
+     * @param id ID of the customer to update.
      * @param customerDTO UpdateCustomerDTO containing the new data for the customer.
      * @return ResponseEntity containing the response DTO for the updated customer.
      * @throws InvalidInputFormatException Thrown when the input data does not meet the required format.
@@ -89,21 +94,31 @@ public class CustomerController {
         return ResponseEntity.ok(customerService.updateCustomer(customerDTO, id, false));
     }
 
+    /**
+     * Endpoint to partially update a customer's information (one/some fields).
+     *
+     * @param id ID of the customer to update.
+     * @param customerDTO UpdateCustomerDTO containing the new data for the customer.
+     * @return ResponseEntity containing the response DTO for the updated customer.
+     * @throws InvalidInputFormatException Thrown when the input data does not meet the required format.
+     */
     @PatchMapping("/{id}")
-    public ResponseEntity<CustomerResponseDTO> patchUpdateCustomer(@PathVariable @Min(1) long id,
-                                                                   @RequestBody UpdateCustomerDTO customerDTO)
+    public ResponseEntity<CustomerResponseDTO> partialUpdateCustomer(@PathVariable @Min(1) long id,
+                                                                     @RequestBody UpdateCustomerDTO customerDTO)
             throws InvalidInputFormatException {
         return ResponseEntity.ok(customerService.updateCustomer(customerDTO, id, true));
     }
 
     /**
-     * Endpoint for deleting a customer by their ID.
+     * Endpoint to delete a customer by ID (set isActive to false).
      *
-     * @param id ID of the customer to delete.
+     * @param id The ID of the customer to delete.
+     * @return ResponseEntity indicating success of the operation.
      */
     @DeleteMapping("/{id}")
-    public void deleteCustomer(@PathVariable @Min(1) long id) {
+    public ResponseEntity<Void> deleteCustomer(@PathVariable @Min(1) long id) {
         customerService.deleteCustomer(id);
+        return ResponseEntity.ok().build();
     }
 
     /**
@@ -113,8 +128,8 @@ public class CustomerController {
      * @return ResponseEntity containing the response DTO for the authentication result.
      */
     @PostMapping("/authenticate")
-    public ResponseEntity<AuthenticationResponseDTO> authenticate
-    (@RequestBody AuthenticationRequestDTO authenticateRequestDTO) {
+    public ResponseEntity<AuthenticationResponseDTO> authenticate(@RequestBody
+                                                                  AuthenticationRequestDTO authenticateRequestDTO) {
         return ResponseEntity.ok(authenticationService.authenticateCustomer(authenticateRequestDTO));
     }
 }

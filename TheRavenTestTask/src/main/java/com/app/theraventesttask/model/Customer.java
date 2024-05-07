@@ -2,18 +2,19 @@ package com.app.theraventesttask.model;
 
 import com.app.theraventesttask.model.dto.CustomerDTO;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import java.util.Date;
 
+/**
+ * Entity representing a customer.
+ */
 @Data
 @NoArgsConstructor
 @RequiredArgsConstructor
+@AllArgsConstructor
 @Entity
-@Table(name = "users")
+@Table(name = "customers")
 public class Customer {
     @Id
     @Column(name = "id")
